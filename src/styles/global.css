@@ -1,0 +1,67 @@
+:root {
+  /* Bảng màu thiết kế */
+  --color-primary: #2C5144;      /* Xanh ngọc đậm */
+  --color-bg-main: #FAF9F5;      /* Kem ngà */
+  --color-bg-light: #FFFDF8;     /* Trắng ấm */
+  --color-accent-light: #E7E9E1; /* Xám xanh nhạt */
+  --color-brown: #78654B;        /* Nâu trầm */
+  --color-gold: #B99A63;         /* Vàng đồng nhẹ */
+  --color-text-main: #1A1A1A;
+  --color-text-muted: #555555;
+  --color-border: #D1D5DB;
+
+  /* Typography */
+  --font-heading: 'Lora', serif;
+  --font-body: 'Be Vietnam Pro', sans-serif;
+
+  /* Cấu trúc Layout Studio */
+  --header-height: 72px;
+  --sidebar-width: 320px;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: var(--font-body);
+  background-color: var(--color-bg-main);
+  color: var(--color-text-main);
+  -webkit-font-smoothing: antialiased;
+  line-height: 1.5;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-heading);
+  font-weight: 500;
+  color: var(--color-primary);
+}
+
+a {
+  text-decoration: none;
+  color: inherit;
+}
+
+button {
+  font-family: var(--font-body);
+  cursor: pointer;
+  border: none;
+  background: none;
+  transition: all 0.2s ease-in-out;
+}
+
+/* Layout cơ bản */
+.app-container {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  overflow: hidden;
+}
+
+.main-content {
+  flex: 1;
+  display: flex;
+  overflow: hidden;
+}

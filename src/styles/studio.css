@@ -1,0 +1,39 @@
+.studio-layout {
+  display: flex;
+  width: 100%;
+  height: 100%;
+}
+
+.studio-sidebar {
+  width: var(--sidebar-width);
+  background-color: var(--color-bg-light);
+  border-right: 1px solid var(--color-accent-light);
+  padding: 24px;
+  overflow-y: auto;
+  flex-shrink: 0;
+}
+
+.studio-sidebar.right {
+  border-right: none;
+  border-left: 1px solid var(--color-accent-light);
+}
+
+.studio-workspace {
+  flex: 1;
+  position: relative;
+  background-color: var(--color-bg-main);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.placeholder-3d {
+  text-align: center;
+  color: var(--color-text-muted);
+}
+
+.placeholder-3d h2 {
+  font-size: 1.5rem;
+  margin-bottom: 8px;
+}
