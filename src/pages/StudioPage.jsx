@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { defaultLook } from '../contracts/look';
 import '../styles/studio.css';
+import AvatarViewer from '../three/AvatarViewer';
 
 const StudioPage = () => {
   const [currentLook, setCurrentLook] = useState(defaultLook);
@@ -18,10 +19,7 @@ const StudioPage = () => {
 
       {/* Cột giữa: Không gian 3D */}
       <main className="studio-workspace">
-        <div className="placeholder-3d">
-          <h2>KHÔNG GIAN 3D</h2>
-          <p>Mô hình {currentLook.garmentId} đang được tích hợp bởi Thành viên 2</p>
-        </div>
+        <AvatarViewer look={currentLook} autoRotate={false} cameraPreset="front" />
       </main>
 
       {/* Cột phải: Nét riêng của bạn */}
