@@ -1,0 +1,2 @@
+import { useRef, useEffect } from 'react';
+export default function Modal({title,onClose,children}){const ref=useRef();useEffect(()=>{const d=ref.current;d.showModal();return ()=>d.close();},[]);return <dialog ref={ref} onCancel={e=>{e.preventDefault();onClose();}} onClick={e=>{if(e.target===ref.current)onClose();}} aria-label={title}><div className="dialog-body"><header><h2>{title}</h2><button aria-label="Đóng" onClick={onClose}>×</button></header>{children}</div></dialog>;}

@@ -1,12 +1,3 @@
-import React from 'react';
-
-const CulturePage = () => {
-  return (
-    <div style={{ padding: '40px', textAlign: 'center' }}>
-      <h2>Chuyện Nếp Áo</h2>
-      <p>Thư viện văn hóa và lịch sử trang phục (Thành viên 3 sẽ cung cấp data).</p>
-    </div>
-  );
-};
-
-export default CulturePage;
+import { useSearchParams,Link } from 'react-router-dom';
+import { CULTURE_DATA } from '../data/culture.js';
+export default function CulturePage(){const [params]=useSearchParams();const highlighted=params.get('garment');return <div className="content-page"><div className="page-heading"><div><p className="eyebrow">MỖI NẾP ÁO, MỘT CÂU CHUYỆN</p><h1>Hiểu nếp xưa. Phối nét mới.</h1><p className="muted">Một điểm khởi đầu để tìm hiểu Việt phục. Phân biệt bản remix và phục dựng lịch sử.</p></div></div><div className="culture-grid">{Object.values(CULTURE_DATA).sort((a,b)=>(a.id===highlighted?-1:b.id===highlighted?1:0)).map((c,i)=><article className="culture-card" key={c.id}><span className="eyebrow">0{i+1} / DI SẢN TRANG PHỤC</span><h2>{c.name}</h2><h3>Nguồn gốc và bối cảnh</h3><p>{c.origin}</p><h3>Đặc điểm nhận diện</h3><p>{c.characteristics}</p><h3>Ý nghĩa văn hóa</h3><p>{c.culturalValue}</p><h3>Ứng dụng hôm nay</h3><p>{c.modernUsage}</p><details><summary>Tư liệu tham khảo</summary><ul>{c.sources.map(s=><li key={s.url}><a href={s.url} target="_blank" rel="noreferrer">{s.title} ↗</a></li>)}</ul><p className="helper">Đường dẫn tư liệu tổng quan; không phải mọi chi tiết cấu trúc đều có trên từng trang. Nhóm cần bổ sung khảo chứng nếu trình bày một phục dựng cụ thể.</p></details><Link className="button soft" to="/">Thử phối trong Studio ↗</Link></article>)}</div><div className="insight"><h3>Phối mới với sự tôn trọng</h3><p>Ứng dụng dùng họa tiết lá và sóng mang tính trang trí, không gán chúng cho một triều đại hay phẩm cấp. Các gợi ý phù hợp sự kiện là hướng dẫn thiết kế; khi dự nghi lễ, hãy tìm hiểu quy định thực tế của nơi tổ chức.</p></div></div>;}
