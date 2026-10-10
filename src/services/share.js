@@ -1,0 +1,6 @@
+import { normalizeLook } from '../contracts/look.js';
+export function encodeLook(look){const bytes=new TextEncoder().encode(JSON.stringify(normalizeLook(look)));let s='';bytes.forEach(x=>s+=String.fromCharCode(x));return btoa(s).replaceAll('+','-').replaceAll('/','_').replace(/=+$/,'');}
+export function decodeLook(token){if(typeof token!=='string'||token.length>5000)throw new Error('Liên kết quá dài.');try{const s=atob(token.replaceAll('-','+').replaceAll('_','/'));return normalizeLook(JSON.parse(new TextDecoder('utf-8',{fatal:true}).decode(Uint8Array.from(s,c=>c.charCodeAt(0)))));}catch{throw new Error('Liên kết bản phối không hợp lệ.');}}
+export function sharedLook(){const token=new URL(location.href).searchParams.get('look');return token?decodeLook(token):null;}
+export function shareURL(look){const url=new URL(location.href);url.search='';url.hash='';url.searchParams.set('look',encodeLook(look));return url.toString();}
+export function downloadFile(data,name,type='application/json'){const url=URL.createObjectURL(new Blob([data],{type}));const a=document.createElement('a');a.href=url;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);}

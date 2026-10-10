@@ -1,48 +1,13 @@
-import React, { Suspense, useEffect } from 'react';
+import { Suspense, useEffect } from 'react';
 import { Canvas } from '@react-three/fiber';
-import SceneEnvironment from './SceneEnvironment';
-import CameraController from './CameraController';
-import HumanAvatar from './HumanAvatar';
-import GarmentSystem from './GarmentSystem';
-
-// Một component nhỏ để trigger callback onReady khi tải xong
-const LoadReporter = ({ onReady }) => {
-  useEffect(() => {
-    if (onReady) onReady();
-  }, [onReady]);
-  return null;
-};
-
-const AvatarViewer = ({ 
-  look, 
-  cameraPreset = 'front', 
-  autoRotate = false, 
-  background = 'studio-cream',
-  onReady, 
-  onError 
-}) => {
-  
-  return (
-    <div style={{ width: '100%', height: '100%', position: 'relative' }}>
-      <Canvas 
-        shadows 
-        camera={{ position: [0, 1.2, 4], fov: 45 }}
-        gl={{ preserveDrawingBuffer: true, antialias: true }} // preserveDrawingBuffer để hỗ trợ chụp ảnh màn hình
-      >
-        <SceneEnvironment backgroundId={background} />
-        <CameraController preset={cameraPreset} autoRotate={autoRotate} />
-        
-        {/* Xử lý lỗi tải model (Lưu ý: Trong thực tế cần ErrorBoundary bọc ngoài Canvas) */}
-        <Suspense fallback={null}>
-          <group position={[0, -1, 0]}> {/* Căn chỉnh cho chân chạm đất */}
-            <HumanAvatar />
-            <GarmentSystem look={look} />
-          </group>
-          <LoadReporter onReady={onReady} />
-        </Suspense>
-      </Canvas>
-    </div>
-  );
-};
-
-export default AvatarViewer;
+import SceneEnvironment from './SceneEnvironment.jsx';
+import CameraController from './CameraController.jsx';
+import HumanAvatar from './HumanAvatar.jsx';
+import GarmentSystem from './GarmentSystem.jsx';
+import AccessorySystem from './AccessorySystem.jsx';
+import ErrorBoundary from '../components/ErrorBoundary.jsx';
+function Ready({callback}){useEffect(()=>{callback?.();},[callback]);return null;}
+export default function AvatarViewer({look,cameraPreset='front',autoRotate=false,zoom=1,resetKey=0,onReady,onModelReady,onError}){
+  return <ErrorBoundary onError={onError}><Canvas frameloop="demand" shadows dpr={[1,1.5]} camera={{position:[0,1.12,3.25],fov:37}} gl={{preserveDrawingBuffer:true,antialias:true}} onCreated={({gl})=>onReady?.(gl.domElement)} fallback={<div role="alert">Thiết bị chưa hỗ trợ WebGL. Bạn vẫn có thể chọn đồ và lưu bản phối.</div>}>
+    <SceneEnvironment backgroundId={look.backgroundId}/><CameraController preset={cameraPreset} autoRotate={autoRotate} zoom={zoom} resetKey={resetKey}/><Suspense fallback={null}><HumanAvatar skinColor={look.skinColor}/><GarmentSystem look={look}/><AccessorySystem ids={look.accessoryIds}/><Ready callback={onModelReady}/></Suspense></Canvas></ErrorBoundary>;
+}

@@ -1,0 +1,12 @@
+{
+  "ok": true,
+  "checks": [
+    "Materials, patterns, garment repairs, undo/redo and camera controls",
+    "Autosaved draft restored after reload",
+    "JSON import, search, comparison and dialog Escape",
+    "Delete confirmation cancel and accept",
+    "Invalid import leaves existing lookbook intact"
+  ],
+  "browserErrors": [],
+  "failedRequests": []
+}

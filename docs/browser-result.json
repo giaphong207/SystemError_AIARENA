@@ -1,0 +1,21 @@
+{
+  "ok": true,
+  "checks": [
+    "3D: 3 phom áo",
+    "phụ kiện theo slot",
+    "cảnh báo sự kiện",
+    "PNG download",
+    "Unicode share",
+    "2 look save/update",
+    "compare table",
+    "JSON export",
+    "Gemini missing-key error",
+    "rules suggestion",
+    "5 photo colors",
+    "share restore",
+    "culture and deep route reload",
+    "mobile 390px no horizontal overflow"
+  ],
+  "browserErrors": [],
+  "failedRequests": []
+}

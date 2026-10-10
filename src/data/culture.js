@@ -1,37 +1,7 @@
-export const CULTURE_DATA = {
-    "ao-dai": {
-        id: "ao-dai",
-        name: "Áo dài hiện đại",
-        origin: "Được cách tân mạnh mẽ từ áo ngũ thân vào thập niên 1930 (phong cách Lemur, Lê Phổ), tiếp tục phát triển qua các thời kỳ (giác lăng, miniraglan).",
-        characteristics: "Ôm sát cơ thể, xẻ tà cao ngang eo, có hai tà trước và sau. Thường kết hợp với quần ống rộng dài chấm gót.",
-        culturalValue: "Trở thành biểu tượng quốc phục của phụ nữ Việt Nam, đại diện cho vẻ đẹp thanh lịch, hiện đại nhưng vẫn mang nét truyền thống.",
-        modernUsage: "Bản phối 3D trong ứng dụng là phom dáng áo dài hiện đại. Khi phối đồ, người dùng có thể kết hợp với giày thể thao hoặc túi xách hiện đại để mang tính ứng dụng cao.",
-        sources: [
-            "Ngàn năm áo mũ - Trần Quang Đức (tham khảo tiến trình trang phục)",
-            "Bảo tàng Phụ nữ Việt Nam (các tư liệu về lịch sử Áo dài)"
-        ]
-    },
-    "ao-tu-than": {
-        id: "ao-tu-than",
-        name: "Áo tứ thân",
-        origin: "Trang phục phổ biến của phụ nữ nông thôn miền Bắc Việt Nam trước thế kỷ 20.",
-        characteristics: "Gồm 4 thân áo (2 thân sau may liền, 2 thân trước để hở hoặc buộc vạt). Mặc cùng yếm, áo cánh bên trong, váy đụp và thắt lưng (bao đằng).",
-        culturalValue: "Thể hiện tính cần cù, mộc mạc và thẩm mỹ dân gian đặc sắc qua cách phối các lớp màu sắc tương phản (mớ ba mớ bảy).",
-        modernUsage: "Áo tứ thân hiện đại thường được cách điệu về chất liệu (dùng lụa thay vì sồi, đũi) và độ dài để phù hợp biểu diễn hoặc chụp ảnh thời trang.",
-        sources: [
-            "Tư liệu trang phục dân gian - Viện Văn hóa Nghệ thuật Quốc gia Việt Nam"
-        ]
-    },
-    "ao-ngu-than": {
-        id: "ao-ngu-than",
-        name: "Áo ngũ thân lập lĩnh",
-        origin: "Ra đời từ cuộc cải cách trang phục của chúa Nguyễn Phúc Khoát (1744) tại Đàng Trong.",
-        characteristics: "Gồm 5 thân áo (4 thân chính, 1 thân con bên trong). Cổ đứng (lập lĩnh), cài khuy bên phải. Phom áo rộng, không chít eo, che kín cơ thể.",
-        culturalValue: "Là quy chuẩn trang phục cao nhất thời Nguyễn, đại diện cho sự khiêm nhường, kín đáo và triết lý ngũ thường (Nhân, Nghĩa, Lễ, Trí, Tín).",
-        modernUsage: "Gần đây được giới trẻ phục hưng mạnh mẽ. Bản 3D của chúng tôi mô phỏng áo ngũ thân tay chẽn. Rất phù hợp khi mặc cùng quần trắng và khăn vấn.",
-        sources: [
-            "Đình Làng Việt (các bài viết và hoạt động phục dựng Áo ngũ thân)",
-            "Trung tâm Bảo tồn Di tích Cố đô Huế"
-        ]
-    }
+const museum={title:'Bảo tàng Phụ nữ Việt Nam – bộ sưu tập',url:'https://baotangphunu.org.vn/suu-tap/'};
+const tourism={title:'Vietnam Tourism – lịch sử và cách mặc áo dài',url:'https://image.vietnam.travel/things-to-do/ao-dai-vietnam'};
+export const CULTURE_DATA={
+ 'ao-dai':{id:'ao-dai',name:'Áo dài hiện đại',origin:'Áo dài hiện đại phát triển từ những biến đổi của trang phục Việt, trong đó có áo ngũ thân. Các cách tân ở thế kỷ XX tạo nên nhiều kiểu cổ, tay và phom dáng.',characteristics:'Hai tà trước và sau, xẻ hai bên; thường mặc cùng quần dài. Mô hình trong ứng dụng nhấn vào phom ôm vừa và hai tà, không mô phỏng cấu trúc may hoàn chỉnh.',culturalValue:'Một biểu tượng trang phục Việt được sử dụng trong lễ hội, sự kiện, học đường và đời sống; phong cách thay đổi theo thời kỳ và người mặc.',modernUsage:'Có thể phối túi hiện đại hoặc sneaker trong bối cảnh đời thường. Luôn giữ quần dài trong bản minh họa; cân nhắc sự trang nhã khi tham gia nghi lễ.',sources:[tourism,museum]},
+ 'ao-tu-than':{id:'ao-tu-than',name:'Áo tứ thân',origin:'Gắn với trang phục phụ nữ và không gian văn hóa dân gian Bắc Bộ. Những cách mặc, lớp áo và màu sắc có thể khác nhau theo bối cảnh.',characteristics:'Thường được nhận diện qua hai vạt trước mở hoặc buộc, lớp yếm bên trong, váy và dải thắt lưng. Bản 3D minh họa các lớp này bằng hình học đơn giản.',culturalValue:'Gợi hình ảnh đời sống và sinh hoạt văn hóa dân gian Bắc Bộ; thường xuất hiện trong trình diễn văn hóa và hình ảnh lễ hội.',modernUsage:'Nón quai thao hoặc khăn mỏ quạ tạo liên tưởng dân gian phù hợp. Phối lại màu sắc nên được giới thiệu là bản remix, không khẳng định phục dựng một niên đại.',sources:[museum]},
+ 'ao-ngu-than':{id:'ao-ngu-than',name:'Áo ngũ thân lập lĩnh',origin:'Gắn với quá trình định hình trang phục ở Đàng Trong và thời Nguyễn. Cải cách trang phục năm 1744 thường được nhắc đến trong tiến trình phát triển áo dài.',characteristics:'Tên gọi chỉ cấu trúc năm thân; kiểu lập lĩnh có cổ đứng và cài khuy lệch. Bản minh họa dùng phom rộng, cổ đứng và hàng khuy, không hiển thị đầy đủ thân con bên trong.',culturalValue:'Thể hiện một nét thẩm mỹ trang phục Việt với sự kín đáo và nền nã; đang được nhiều người tìm hiểu và sử dụng lại trong hoạt động văn hóa.',modernUsage:'Có thể kết hợp khăn vấn hoặc khăn xếp và quần dài. Khi phối phụ kiện hiện đại, ghi rõ đây là cách tân; tránh gán bản phối cho một phẩm cấp hay nghi thức cụ thể.',sources:[tourism,museum]}
 };

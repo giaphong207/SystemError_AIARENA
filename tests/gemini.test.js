@@ -1,0 +1,10 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { recommend } from '../server/gemini.js';
+import { defaultLook } from '../src/contracts/look.js';
+const input={occasionId:'photo',preference:'tối giản',look:defaultLook};
+const env={apiKey:'test-key',model:'test-model'};
+test('missing key does not pretend to be Gemini',async()=>{await assert.rejects(recommend(input,{apiKey:'',model:'x'}),e=>e.status===503);});
+test('invalid request is rejected before calling Google',async()=>{await assert.rejects(recommend({...input,occasionId:'invalid'},env),e=>e.status===400);});
+test('structured Gemini result is validated and tagged',async()=>{const fetchImpl=async(url,args)=>{assert.ok(url.endsWith('test-model:generateContent'));assert.equal(args.headers['x-goog-api-key'],'test-key');const req=JSON.parse(args.body);assert.ok(req.generationConfig.responseFormat.text.schema);return {ok:true,json:async()=>({candidates:[{content:{parts:[{text:JSON.stringify({look:{...defaultLook,color:'#922F42'},reason:'Phối đỏ theo sở thích.'})}]}}]})};};const result=await recommend(input,{...env,fetchImpl});assert.equal(result.source,'gemini');assert.equal(result.look.color,'#922F42');});
+test('malformed/unsupported provider output and quota errors are explicit',async()=>{for(const text of ['not json',JSON.stringify({look:{...defaultLook,garmentId:'bad'},reason:'x'})])await assert.rejects(recommend(input,{...env,fetchImpl:async()=>({ok:true,json:async()=>({candidates:[{content:{parts:[{text}]}}]})})}));await assert.rejects(recommend(input,{...env,fetchImpl:async()=>({ok:false,status:429})}),e=>e.status===502);});

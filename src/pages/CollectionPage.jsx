@@ -1,12 +1,20 @@
-import React from 'react';
-
-const CollectionPage = () => {
-  return (
-    <div style={{ padding: '40px', textAlign: 'center' }}>
-      <h2>Bộ Sưu Tập</h2>
-      <p>Nơi lưu trữ các bản phối lookbook của bạn (Đang xây dựng).</p>
-    </div>
-  );
-};
-
-export default CollectionPage;
+import { useState,useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { getSavedLooks,deleteLook,exportLooks,importLooks,STORAGE_EVENT } from '../services/lookbook.js';
+import { downloadFile } from '../services/share.js';
+import { GARMENTS } from '../data/garments.js';
+import { FABRICS,getName } from '../data/options.js';
+import Modal from '../components/Modal.jsx';
+import LookComparison from '../components/LookComparison.jsx';
+import AvatarViewer from '../three/AvatarViewer.jsx';
+export default function CollectionPage(){
+ const [looks,setLooks]=useState(getSavedLooks),[selected,setSelected]=useState([]),[message,setMessage]=useState(''),[modal,setModal]=useState(false),[view,setView]=useState(null),[query,setQuery]=useState('');const navigate=useNavigate();
+ useEffect(()=>{const refresh=()=>setLooks(getSavedLooks());window.addEventListener(STORAGE_EVENT,refresh);window.addEventListener('storage',refresh);return ()=>{window.removeEventListener(STORAGE_EVENT,refresh);window.removeEventListener('storage',refresh);};},[]);
+ const picked=selected.map(id=>looks.find(x=>x.id===id)).filter(Boolean);
+ function select(id){setSelected(a=>a.includes(id)?a.filter(x=>x!==id):a.length<2?[...a,id]:[a[1],id]);}
+ async function upload(e){const f=e.target.files?.[0];if(!f)return;try{if(f.size>2*1024*1024)throw new Error('File JSON tối đa 2 MB.');const n=importLooks(await f.text());setMessage('Đã nhập '+n+' bản phối.');}catch(err){setMessage(err.message);}e.target.value='';}
+ function remove(x){if(!confirm('Xóa bản phối “'+x.name+'”?'))return;try{deleteLook(x.id);setSelected(a=>a.filter(id=>id!==x.id));setMessage('Đã xóa bản phối.');}catch(e){setMessage(e.message);}}
+ return <div className="content-page"><div className="page-heading"><div><p className="eyebrow">GIỮ LẠI NÉT RIÊNG</p><h1>Lookbook Việt phục</h1><p className="muted">{looks.length} bản phối lưu trên trình duyệt này. Xuất JSON để sao lưu hoặc chuyển máy.</p></div><button className="button primary" disabled={picked.length!==2} onClick={()=>setModal(true)}>So sánh {picked.length}/2</button></div><div className="collection-toolbar"><input aria-label="Tìm bản phối" placeholder="Tìm theo tên hoặc phom áo…" value={query} onChange={e=>setQuery(e.target.value)}/><button className="button outline" onClick={()=>downloadFile(exportLooks(),'lookbook-viet-phuc.json')}>Xuất JSON</button><label className="button outline">Nhập JSON<input className="file-input" type="file" accept="application/json,.json" onChange={upload}/></label></div>{message&&<p className="notice" role="status">{message}</p>}
+ {!looks.length?<div className="empty-state"><h2>Bộ sưu tập đang đợi bản phối đầu tiên</h2><p>Chọn trang phục, chỉnh màu và bấm “Lưu vào lookbook” trong Studio.</p><button className="button primary" onClick={()=>navigate('/')}>Đến Studio</button></div>:<div className="collection-grid">{looks.filter(x=>(x.name+' '+GARMENTS[x.garmentId].name).toLocaleLowerCase('vi').includes(query.toLocaleLowerCase('vi'))).map(x=><article className={'look-card '+(selected.includes(x.id)?'chosen':'')} key={x.id}><button className="look-preview" onClick={()=>setView(x)} aria-label={'Xem 3D '+x.name} style={{'--look-color':x.color,'--bottom-color':x.bottomColor}}><div className={'dress-illustration '+x.garmentId}><span/></div><span className="preview-label">Xem 3D ↗</span></button><div className="look-card-body"><h2>{x.name}</h2><p>{GARMENTS[x.garmentId].name} · {getName(FABRICS,x.fabricId)}</p><div className="action-row"><button className="button primary" onClick={()=>navigate('/',{state:{look:x}})}>Phối tiếp</button><button className="button outline" aria-pressed={selected.includes(x.id)} onClick={()=>select(x.id)}>{selected.includes(x.id)?'Đã chọn':'So sánh'}</button></div><button className="delete-button" onClick={()=>remove(x)}>Xóa bản phối</button></div></article>)}</div>}
+ {modal&&picked.length===2&&<Modal title="So sánh hai bản phối" onClose={()=>setModal(false)}><LookComparison a={picked[0]} b={picked[1]}/></Modal>}{view&&<Modal title={view.name} onClose={()=>setView(null)}><div className="detail-canvas"><AvatarViewer look={view}/></div><button className="button primary" onClick={()=>navigate('/',{state:{look:view}})}>Chỉnh sửa bản phối</button></Modal>}</div>;
+}

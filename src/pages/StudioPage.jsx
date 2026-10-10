@@ -1,37 +1,61 @@
-import React, { useState } from 'react';
-import { defaultLook } from '../contracts/look';
+import { useState,useEffect,useRef } from 'react';
+import { Link,useLocation } from 'react-router-dom';
+import { Undo2,Redo2,RotateCcw,Download,Bookmark,Share2,Sparkles,Maximize,Plus,Minus } from 'lucide-react';
+import { defaultLook,changeGarment,toggleAccessory,normalizeLook } from '../contracts/look.js';
+import { GARMENTS } from '../data/garments.js';
+import { COLORS,FABRICS,PATTERNS,ACCESSORIES,OCCASIONS,BACKGROUNDS,SKINS } from '../data/options.js';
+import { CULTURE_DATA } from '../data/culture.js';
+import { PRESET_LOOKS } from '../data/presets.js';
+import { loadDraft,saveDraft,saveLook,getSavedLooks } from '../services/lookbook.js';
+import { sharedLook,shareURL,downloadFile } from '../services/share.js';
+import { checkHarmony,suggestLocally } from '../services/recommendations.js';
+import { extractPalette } from '../services/photoPalette.js';
+import { askGemini } from '../services/gemini.js';
+import useLookHistory from '../hooks/useLookHistory.js';
+import AvatarViewer from '../three/AvatarViewer.jsx';
+import Modal from '../components/Modal.jsx';
+import LookComparison from '../components/LookComparison.jsx';
 import '../styles/studio.css';
-import AvatarViewer from '../three/AvatarViewer';
-
-const StudioPage = () => {
-  const [currentLook, setCurrentLook] = useState(defaultLook);
-
-  return (
-    <div className="studio-layout">
-      {/* Cột trái: Tủ đồ Việt */}
-      <aside className="studio-sidebar left">
-        <h3>Tủ đồ Việt</h3>
-        <p style={{ fontSize: '0.9rem', color: 'var(--color-text-muted)', marginTop: '8px' }}>
-          Hôm nay, bạn đi đâu?
-        </p>
-        {/* Component GarmentSelector, AccessorySelector sẽ nằm ở đây */}
-      </aside>
-
-      {/* Cột giữa: Không gian 3D */}
-      <main className="studio-workspace">
-        <AvatarViewer look={currentLook} autoRotate={false} cameraPreset="front" />
-      </main>
-
-      {/* Cột phải: Nét riêng của bạn */}
-      <aside className="studio-sidebar right">
-        <h3>Nét riêng của bạn</h3>
-        <p style={{ fontSize: '0.9rem', color: 'var(--color-text-muted)', marginTop: '8px' }}>
-          Màu sắc & Chất liệu
-        </p>
-        {/* Component ColorPicker, MaterialSelector sẽ nằm ở đây */}
-      </aside>
-    </div>
-  );
-};
-
-export default StudioPage;
+export default function StudioPage(){
+ const location=useLocation();
+ const [initial]=useState(()=>{try{return {look:normalizeLook(location.state?.look||sharedLook()||loadDraft(defaultLook)),error:''};}catch(e){return {look:loadDraft(defaultLook),error:e.message};}});
+ const {look,update,undo,redo,canUndo,canRedo}=useLookHistory(()=>initial.look);
+ const [message,setMessage]=useState(initial.error);const [draftStatus,setDraftStatus]=useState('Đang lưu nháp…');
+ const [camera,setCamera]=useState('front'),[rotate,setRotate]=useState(false),[zoom,setZoom]=useState(1),[resetKey,setResetKey]=useState(0);
+ const [modal,setModal]=useState(''),[busy,setBusy]=useState(false),[preference,setPreference]=useState(''),[suggestion,setSuggestion]=useState(null),[palette,setPalette]=useState([]);
+ const [savedLook,setSavedLook]=useState(()=>getSavedLooks().find(x=>x.id===initial.look.id)||null),[modelReady,setModelReady]=useState(false);
+ const canvasRef=useRef(null),stageRef=useRef(null),controller=useRef(null);
+ useEffect(()=>{const t=setTimeout(()=>{try{saveDraft(look);setDraftStatus('Bản nháp đã lưu trên máy');}catch(e){setDraftStatus('Chưa lưu được bản nháp');setMessage(e.message);}},300);return ()=>clearTimeout(t);},[look]);
+ useEffect(()=>()=>controller.current?.abort(),[]);
+ const garment=GARMENTS[look.garmentId];const harmony=checkHarmony(look);const culture=CULTURE_DATA[look.garmentId];
+ function patch(p){update(x=>({...x,...p}));}
+ function apply(result){update({...result.look,id:look.id});setSuggestion(result);setMessage('Đã áp dụng gợi ý. Bạn có thể tiếp tục chỉnh sửa.');}
+ function localSuggestion(){apply(suggestLocally(look.occasionId,preference));}
+ async function geminiSuggestion(){setBusy(true);setMessage('');controller.current?.abort();controller.current=new AbortController();try{const result=await askGemini({occasionId:look.occasionId,preference,look},controller.current.signal);apply(result);}catch(e){if(e.name!=='AbortError')setMessage(e.message+' Bạn vẫn có thể dùng nút “Gợi ý theo quy tắc”.');}finally{setBusy(false);}}
+ async function fromPhoto(e){const f=e.target.files?.[0];if(!f)return;try{setPalette(await extractPalette(f));setMessage('Đã lấy màu từ ảnh. Bấm một màu để áp dụng lên áo.');}catch(err){setMessage(err.message);}e.target.value='';}
+ function save(){try{const saved=saveLook({...look,id:savedLook?.id||crypto.randomUUID()});setSavedLook(saved);setMessage('Đã lưu vào bộ sưu tập. Lần lưu tiếp theo sẽ cập nhật bản này.');}catch(e){setMessage(e.message);}}
+ async function screenshot(){try{if(!canvasRef.current||!modelReady)throw new Error('Hãy chờ mô hình 3D tải xong.');await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));const source=canvasRef.current;const c=document.createElement('canvas');c.width=source.width;c.height=source.height+100;const ctx=c.getContext('2d');ctx.fillStyle='#FAF9F5';ctx.fillRect(0,0,c.width,c.height);ctx.drawImage(source,0,0);ctx.fillStyle='#2C5144';ctx.font='24px sans-serif';ctx.fillText(look.name,24,source.height+35);ctx.font='14px sans-serif';ctx.fillText('Việt Phục Remix · '+garment.name+' · Minh họa 3D',24,source.height+68);const blob=await new Promise(r=>c.toBlob(r,'image/png'));if(!blob)throw new Error('Không tạo được ảnh.');downloadFile(blob,'viet-phuc-remix.png','image/png');setMessage('Đã xuất ảnh PNG.');}catch(e){setMessage(e.message);}}
+ async function share(){const url=shareURL(look);try{await navigator.clipboard.writeText(url);setMessage('Đã sao chép liên kết bản phối. Người nhận mở trên cùng địa chỉ ứng dụng.');}catch{setModal('share');}}
+ async function fullscreen(){try{if(document.fullscreenElement)await document.exitFullscreen();else await stageRef.current.requestFullscreen();}catch{setMessage('Trình duyệt không hỗ trợ toàn màn hình ở đây.');}}
+ return <div className="studio-page"><div className="page-heading"><div><p className="eyebrow">DI SẢN TRONG MỘT DIỆN MẠO MỚI</p><h1>Nếp xưa. <em>Nét riêng.</em></h1><p className="muted">Một chút truyền thống. Một chút bạn. Bắt đầu bản phối của riêng mình.</p></div><button className="button soft" onClick={()=>setModal('suggest')}><Sparkles size={17}/>Gợi ý cho tôi</button></div>
+ {message&&<div className="notice" role="status"><span>{message}</span><button aria-label="Đóng thông báo" onClick={()=>setMessage('')}>×</button></div>}
+ <div className="studio-layout"><aside className="panel studio-sidebar"><h2>Tủ đồ Việt <small>03 PHOM ÁO</small></h2><label className="field">Hôm nay, bạn đi đâu?<select value={look.occasionId} onChange={e=>patch({occasionId:e.target.value})}>{OCCASIONS.map(x=><option key={x.id} value={x.id}>{x.name}</option>)}</select></label><p className="helper">{OCCASIONS.find(x=>x.id===look.occasionId).hint}</p>
+ <h3>Chọn phom áo</h3><div className="garment-list">{Object.values(GARMENTS).map((g,i)=><button key={g.id} className={'garment-choice '+(g.id===look.garmentId?'selected':'')} aria-pressed={g.id===look.garmentId} onClick={()=>update(x=>changeGarment(x,g.id))}><span className="garment-symbol">0{i+1}</span><span><strong>{g.name}</strong><small>{g.id==='ao-dai'?'Thanh thoát, mềm mại':g.id==='ao-tu-than'?'Nhiều lớp, giàu sắc độ':'Đĩnh đạc, nền nã'}</small></span><span className="selection-dot"/></button>)}</div>
+ <h3>Thêm chút điểm nhấn</h3><div className="accessory-grid">{ACCESSORIES.map(a=><button key={a.id} aria-pressed={look.accessoryIds.includes(a.id)} className={look.accessoryIds.includes(a.id)?'selected':''} onClick={()=>update(x=>toggleAccessory(x,a.id))}>{a.name}</button>)}</div><p className="helper">Mỗi vị trí chọn một phụ kiện. Phụ kiện hiện đại được xem là remix.</p>
+ <details className="presets"><summary>Bản phối mẫu để bắt đầu</summary>{PRESET_LOOKS.map(p=><button key={p.id} onClick={()=>{update({...normalizeLook(p),id:look.id});setSuggestion(null);}}>{p.name}</button>)}</details><Link className="culture-link" to={'/culture?garment='+look.garmentId}>Mỗi nếp áo, một câu chuyện ↗</Link></aside>
+ <section className="studio-workspace"><div className="stage" ref={stageRef}><div className="stage-title"><p className="eyebrow">KHÔNG GIAN 3D</p><h2>{garment.name}</h2><small>{FABRICS.find(x=>x.id===look.fabricId).name} · Bản phối remix</small></div><div className="canvas-frame"><AvatarViewer look={look} cameraPreset={camera} autoRotate={rotate} zoom={zoom} resetKey={resetKey} onReady={c=>{canvasRef.current=c;}} onModelReady={()=>setModelReady(true)} onError={()=>setModelReady(false)}/></div>
+ {!modelReady&&<div className="model-loading" role="status">Đang tải nhân vật 3D</div>}<div className="stage-top-tools"><button title="Hoàn tác" aria-label="Hoàn tác" disabled={!canUndo} onClick={undo}><Undo2 size={17}/></button><button title="Làm lại" aria-label="Làm lại" disabled={!canRedo} onClick={redo}><Redo2 size={17}/></button><button title="Toàn màn hình" aria-label="Toàn màn hình" onClick={fullscreen}><Maximize size={17}/></button></div>
+ <div className="stage-bottom-tools"><div><div className="backgrounds">{BACKGROUNDS.map(b=><button key={b.id} title={b.name} aria-label={'Phông '+b.name} aria-pressed={look.backgroundId===b.id} className={look.backgroundId===b.id?'active':''} style={{background:b.color}} onClick={()=>patch({backgroundId:b.id})}/>)}</div><div className="segmented">{[['front','Trước'],['angle','Nghiêng'],['back','Sau']].map(([id,name])=><button key={id} className={camera===id?'active':''} onClick={()=>setCamera(id)}>{name}</button>)}</div></div><div className="viewer-tools"><button title="Tự xoay" aria-label="Tự xoay" className={rotate?'active':''} aria-pressed={rotate} onClick={()=>setRotate(!rotate)}><RotateCcw size={16}/></button><button aria-label="Thu nhỏ" onClick={()=>setZoom(z=>Math.max(.7,z-.15))}><Minus size={16}/></button><button aria-label="Phóng to" onClick={()=>setZoom(z=>Math.min(1.7,z+.15))}><Plus size={16}/></button><button title="Đặt lại góc" aria-label="Đặt lại góc" onClick={()=>{setCamera('front');setZoom(1);setResetKey(x=>x+1);}}><Undo2 size={16}/></button></div></div><span className="orbit-hint">Kéo để xoay · Cuộn để phóng</span></div>
+ <div className="draft-line"><span>● {draftStatus}</span><button disabled={!savedLook} onClick={()=>setModal('compare')}>So với bản đã lưu</button></div><div className="insight"><h3>{harmony.warnings.length?'Lưu ý cho bản phối':'Một bản phối có khoảng thở'}</h3>{harmony.warnings.map(t=><p key={t}>{t}</p>)}{harmony.notes.map(t=><p key={t}>{t}</p>)}</div>{suggestion&&<div className="insight"><h3>{suggestion.source==='gemini'?'Gợi ý từ Gemini':'Gợi ý theo quy tắc'}</h3><p>{suggestion.reason}</p></div>}<p className="helper model-note">Xem bản phối từ nhiều góc. Minh họa 3D không dùng để xác định size trang phục.</p></section>
+ <aside className="panel studio-sidebar right"><h2>Nét riêng của bạn<button className="text-button" onClick={()=>{update({...defaultLook});setSavedLook(null);setSuggestion(null);}}>Đặt lại</button></h2><h3>Màu áo</h3><div className="swatches">{COLORS.map(c=><button key={c} title={c} aria-label={'Màu '+c} aria-pressed={look.color.toLowerCase()===c.toLowerCase()} style={{background:c}} className={look.color.toLowerCase()===c.toLowerCase()?'selected':''} onClick={()=>patch({color:c})}/>)}</div><div className="color-actions"><label>Màu riêng<input aria-label="Màu áo tùy chọn" type="color" value={look.color} onChange={e=>patch({color:e.target.value})}/></label><button onClick={()=>setModal('photo')}>Lấy từ ảnh ↗</button></div>
+ <h3>Chất liệu</h3><div className="option-grid">{FABRICS.filter(f=>garment.supportedFabrics.includes(f.id)).map(f=><button key={f.id} className={look.fabricId===f.id?'selected':''} aria-pressed={look.fabricId===f.id} onClick={()=>patch({fabricId:f.id})}><span className={'fabric-preview '+f.id}/><strong>{f.name}</strong><small>{f.note}</small></button>)}</div>
+ <h3>Họa tiết</h3><div className="option-grid patterns">{PATTERNS.filter(p=>garment.supportedPatterns.includes(p.id)).map(p=><button key={p.id} aria-pressed={look.patternId===p.id} className={look.patternId===p.id?'selected':''} onClick={()=>patch({patternId:p.id})}>{p.name}</button>)}</div>
+ <label className="field">Độ dài tà áo <span>{look.hemLength}%</span><input aria-label="Độ dài tà áo" type="range" min="75" max="110" value={look.hemLength} disabled={!garment.hasHemLengthAdjustment} onChange={e=>patch({hemLength:Number(e.target.value)})}/></label>{!garment.hasHemLengthAdjustment&&<p className="helper">Giữ độ dài phom minh họa cho {garment.name.toLowerCase()}.</p>}
+ <label className="field">Màu {look.garmentId==='ao-tu-than'?'váy':'quần'}<input aria-label="Màu phần dưới" type="color" value={look.bottomColor} onChange={e=>patch({bottomColor:e.target.value})}/></label><h3>Nhân vật mẫu</h3><div className="swatches skins">{SKINS.map(c=><button key={c} aria-label={'Da mẫu '+c} aria-pressed={look.skinColor===c} className={look.skinColor===c?'selected':''} style={{background:c}} onClick={()=>patch({skinColor:c})}/>)}</div>
+ <label className="field">Đặt tên cho bản phối<input aria-label="Tên bản phối" type="text" maxLength={50} value={look.name} onChange={e=>patch({name:e.target.value})}/></label><button className="button primary wide" onClick={save}><Bookmark size={16}/>Lưu vào lookbook</button><div className="action-row"><button className="button outline" onClick={screenshot}><Download size={15}/>Xuất ảnh</button><button className="button outline" onClick={share}><Share2 size={15}/>Chia sẻ</button></div><p className="helper">{culture.characteristics}</p></aside></div>
+ {modal==='suggest'&&<Modal title="Tìm bản phối phù hợp" onClose={()=>setModal('')}><p>Chọn sự kiện ở tủ đồ và mô tả sở thích của bạn.</p><label className="field">Phong cách mong muốn<textarea value={preference} maxLength={500} onChange={e=>setPreference(e.target.value)} placeholder="Ví dụ: tối giản, màu đỏ, đi lễ hội cùng bạn bè"/></label><div className="action-row"><button className="button soft" onClick={localSuggestion}>Gợi ý theo quy tắc</button><button className="button primary" disabled={busy} onClick={geminiSuggestion}>{busy?'Gemini đang suy nghĩ…':'Hỏi Gemini'}</button></div><p className="helper">Gợi ý theo quy tắc dùng danh mục có sẵn. Gemini hỗ trợ diễn giải sở thích khi dịch vụ đã được bật.</p>{message&&<p role="status">{message}</p>}{suggestion&&<div className="insight"><strong>{suggestion.source==='gemini'?'Gemini':'Quy tắc'}: {look.name}</strong><p>{suggestion.reason}</p></div>}</Modal>}
+ {modal==='photo'&&<Modal title="Lấy cảm hứng từ ảnh" onClose={()=>setModal('')}><p>Chọn ảnh hoặc chụp trên điện thoại để lấy 5 màu chủ đạo. Ảnh được xử lý trong trình duyệt.</p><label className="field">Chọn ảnh<input aria-label="Ảnh tham khảo" type="file" accept="image/jpeg,image/png,image/webp" capture="environment" onChange={fromPhoto}/></label><div className="swatches">{palette.map(c=><button key={c} style={{background:c}} aria-label={'Dùng màu '+c} title={c} onClick={()=>patch({color:c})}/>)}</div><p className="helper">Tính năng lấy màu từ toàn ảnh; không phân tích vóc dáng hay tạo nhân vật giống người trong ảnh.</p>{message&&<p role="status">{message}</p>}</Modal>}
+ {modal==='share'&&<Modal title="Liên kết bản phối" onClose={()=>setModal('')}><p>Sao chép liên kết dưới đây. Khi gửi cho người khác, ứng dụng cần được đưa lên một địa chỉ mà họ truy cập được.</p><textarea readOnly aria-label="Liên kết chia sẻ" value={shareURL(look)} onFocus={e=>e.target.select()}/></Modal>}
+ {modal==='compare'&&<Modal title="So sánh trước và sau" onClose={()=>setModal('')}><LookComparison a={savedLook} b={look}/></Modal>}
+ </div>;
+}

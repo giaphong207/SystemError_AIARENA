@@ -1,0 +1,16 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { defaultLook,normalizeLook,validateLook,changeGarment,toggleAccessory } from '../src/contracts/look.js';
+import { PRESET_LOOKS } from '../src/data/presets.js';
+import { OCCASIONS } from '../src/data/options.js';
+import { suggestLocally,checkHarmony } from '../src/services/recommendations.js';
+import { encodeLook,decodeLook } from '../src/services/share.js';
+import { saveLook,getSavedLooks,deleteLook,exportLooks,importLooks } from '../src/services/lookbook.js';
+const store=new Map();globalThis.localStorage={getItem:k=>store.get(k)||null,setItem:(k,v)=>store.set(k,v)};
+test('all initial presets and every occasion produce a valid look',()=>{for(const p of PRESET_LOOKS)assert.ok(validateLook(normalizeLook(p)));for(const o of OCCASIONS)assert.ok(validateLook(suggestLocally(o.id).look));});
+test('changing garment repairs unsupported fabrics and patterns',()=>{const tu=changeGarment({...defaultLook,fabricId:'brocade',patternId:'wave'},'ao-tu-than');assert.equal(tu.fabricId,'dui');assert.equal(tu.patternId,'none');assert.equal(tu.hemLength,100);assert.ok(validateLook(tu));});
+test('only one accessory occupies a slot and clicking again removes it',()=>{let x=toggleAccessory(defaultLook,'non-la');x=toggleAccessory(x,'khan-van');assert.deepEqual(x.accessoryIds,['khan-van']);x=toggleAccessory(x,'khan-van');assert.deepEqual(x.accessoryIds,[]);});
+test('rejects unknown IDs, invalid color, duplicate slot and oversized names',()=>{for(const p of [{garmentId:'missing'},{color:'red'},{bottomColor:'#ggg'},{name:' '},{hemLength:500},{accessoryIds:['non-la','khan-van']},{accessoryIds:['unknown']},{name:'a'.repeat(51)}])assert.throws(()=>normalizeLook({...defaultLook,...p}));});
+test('Unicode share round trip and corrupt URL rejection',()=>{const x={...defaultLook,name:'Nếp Việt – Duyên quê'};assert.deepEqual(decodeLook(encodeLook(x)),x);assert.throws(()=>decodeLook('broken!!'));});
+test('lookbook save, update, export, atomic import, corruption and delete',()=>{store.clear();saveLook(defaultLook);saveLook({...defaultLook,name:'Updated'});assert.equal(getSavedLooks().length,1);assert.equal(getSavedLooks()[0].name,'Updated');const backup=exportLooks();assert.throws(()=>importLooks(JSON.stringify({version:1,looks:[{...defaultLook,color:'bad'}]})));assert.equal(getSavedLooks()[0].name,'Updated');deleteLook(defaultLook.id);assert.equal(getSavedLooks().length,0);assert.equal(importLooks(backup),1);store.set('vietphuc_lookbook','{broken');assert.deepEqual(getSavedLooks(),[]);});
+test('warns about modern accessories at heritage ceremonies',()=>{const x={...defaultLook,occasionId:'heritage',accessoryIds:['giay-the-thao']};assert.ok(checkHarmony(x).warnings.length);});

@@ -1,48 +1,8 @@
-import React, { useEffect, useRef } from 'react';
+import { useEffect, useRef } from 'react';
 import { useThree } from '@react-three/fiber';
 import { OrbitControls } from '@react-three/drei';
-import gsap from 'gsap';
-
-const CameraController = ({ preset, autoRotate }) => {
-  const { camera, controls } = useThree();
-  const controlsRef = useRef();
-
-  useEffect(() => {
-    if (!controlsRef.current) return;
-
-    // Các góc quay chuẩn (x, y, z) tính theo hệ tọa độ Three.js
-    const positions = {
-      front: { x: 0, y: 1.2, z: 4 },
-      angle: { x: -2.5, y: 1.2, z: 3 },
-      back: { x: 0, y: 1.2, z: -4 }
-    };
-
-    const targetPos = positions[preset] || positions.front;
-
-    // Dùng GSAP hoặc lerp để chuyển góc mượt mà
-    gsap.to(camera.position, {
-      x: targetPos.x,
-      y: targetPos.y,
-      z: targetPos.z,
-      duration: 1,
-      ease: 'power2.inOut',
-      onUpdate: () => controlsRef.current.update()
-    });
-
-  }, [preset, camera]);
-
-  return (
-    <OrbitControls 
-      ref={controlsRef}
-      target={[0, 1, 0]} // Trọng tâm là phần ngực/eo người mẫu
-      enablePan={false}
-      minDistance={1.5}
-      maxDistance={6}
-      maxPolarAngle={Math.PI / 2 + 0.1} // Không cho lật camera xuống dưới sàn
-      autoRotate={autoRotate}
-      autoRotateSpeed={2.0}
-    />
-  );
-};
-
-export default CameraController;
+export default function CameraController({preset,autoRotate,zoom=1,resetKey=0}){
+  const {camera}=useThree();const ref=useRef();
+  useEffect(()=>{const p={front:[0,1.12,3.25],angle:[2.1,1.20,2.6],back:[0,1.12,-3.25]}[preset]||[0,1.12,3.25];camera.position.set(p[0]/zoom,.86+(p[1]-.86)/zoom,p[2]/zoom);if(ref.current){ref.current.target.set(0,.86,0);ref.current.update();}},[camera,preset,zoom,resetKey]);
+  return <OrbitControls ref={ref} makeDefault target={[0,.86,0]} enablePan={false} minDistance={1.4} maxDistance={5} minPolarAngle={.25} maxPolarAngle={Math.PI/2+.1} autoRotate={autoRotate} autoRotateSpeed={1.3}/>;
+}

@@ -1,117 +1,16 @@
-// src/services/lookbook.js
-
-const STORAGE_KEY = 'vietphuc_lookbook';
-const CURRENT_SCHEMA_VERSION = 1;
-
-/**
- * Khởi tạo dữ liệu mẫu nếu chưa có
- */
-const initStorage = () => {
-    const data = localStorage.getItem(STORAGE_KEY);
-    if (!data) {
-        const emptyLookbook = {
-            version: CURRENT_SCHEMA_VERSION,
-            looks: []
-        };
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(emptyLookbook));
-        return emptyLookbook;
-    }
-    try {
-        return JSON.parse(data);
-    } catch (error) {
-        console.error("Dữ liệu lookbook bị hỏng, khởi tạo lại.");
-        return { version: CURRENT_SCHEMA_VERSION, looks: [] };
-    }
-};
-
-/**
- * Validate một look object trước khi lưu
- */
-export const validateLook = (look) => {
-    const requiredKeys = ['id', 'name', 'garmentId', 'color', 'fabricId'];
-    for (let key of requiredKeys) {
-        if (!look[key]) return false;
-    }
-    if (look.name.length > 50) return false; // Tránh tên quá dài
-    // Kiểm tra Hex color hợp lệ
-    if (!/^#[0-9A-F]{6}$/i.test(look.color)) return false;
-    return true;
-};
-
-/**
- * Lấy toàn bộ bản phối đã lưu
- */
-export const getSavedLooks = () => {
-    const data = initStorage();
-    return data.looks || [];
-};
-
-/**
- * Lưu hoặc cập nhật bản phối
- */
-export const saveLook = (look) => {
-    if (!validateLook(look)) {
-        throw new Error("Dữ liệu bản phối không hợp lệ.");
-    }
-
-    const data = initStorage();
-    const existingIndex = data.looks.findIndex(l => l.id === look.id);
-
-    const lookToSave = {
-        ...look,
-        updatedAt: new Date().toISOString(),
-        createdAt: look.createdAt || new Date().toISOString()
-    };
-
-    if (existingIndex >= 0) {
-        data.looks[existingIndex] = lookToSave;
-    } else {
-        data.looks.push(lookToSave);
-    }
-
-    try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-        return lookToSave;
-    } catch (e) {
-        throw new Error("Không thể lưu (LocalStorage có thể đã đầy).");
-    }
-};
-
-/**
- * Xóa một bản phối theo ID
- */
-export const deleteLook = (id) => {
-    const data = initStorage();
-    data.looks = data.looks.filter(l => l.id !== id);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-};
-
-/**
- * Xuất toàn bộ lookbook ra JSON string
- */
-export const exportLooks = () => {
-    const data = initStorage();
-    return JSON.stringify(data, null, 2);
-};
-
-/**
- * So sánh 2 bản phối (Trả về Object chứa các trường khác biệt)
- */
-export const compareLooks = (lookA, lookB) => {
-    if (!lookA || !lookB) return null;
-
-    const diff = {};
-    const keysToCompare = ['garmentId', 'color', 'fabricId', 'patternId', 'bottomColor'];
-
-    keysToCompare.forEach(key => {
-        if (lookA[key] !== lookB[key]) {
-            diff[key] = { A: lookA[key], B: lookB[key] };
-        }
-    });
-
-    return {
-        lookA,
-        lookB,
-        diff
-    };
-};
+import { normalizeLook, validateLook } from '../contracts/look.js';
+export { validateLook };
+const STORAGE_KEY='vietphuc_lookbook';
+const DRAFT_KEY='vietphuc_draft';
+export const STORAGE_EVENT='vietphuc-change';
+function notify(){ if(typeof window!=='undefined') window.dispatchEvent(new Event(STORAGE_EVENT)); }
+function write(key,value){ try{localStorage.setItem(key,JSON.stringify(value));notify();}catch{throw new Error('Không lưu được trên máy: bộ nhớ đầy hoặc trình duyệt chặn lưu trữ. Hãy xuất JSON để giữ bản phối.');} }
+function read(key){ try{const s=localStorage.getItem(key);return s?JSON.parse(s):null;}catch{ return null; } }
+export function getSavedLooks(){const d=read(STORAGE_KEY);return Array.isArray(d?.looks)?d.looks.flatMap(raw=>{try{return [{...normalizeLook(raw),createdAt:raw.createdAt,updatedAt:raw.updatedAt}];}catch{return [];}}):[];}
+export function saveLook(raw){const x=normalizeLook(raw);const now=new Date().toISOString();const looks=getSavedLooks();const i=looks.findIndex(a=>a.id===x.id);const saved={...x,createdAt:i<0?now:looks[i].createdAt,updatedAt:now};if(i<0 && looks.length>=100)throw new Error('Tối đa 100 bản phối. Hãy xuất và xóa bớt trước khi lưu.');if(i<0)looks.unshift(saved);else looks[i]=saved;write(STORAGE_KEY,{version:1,looks});return saved;}
+export function deleteLook(id){write(STORAGE_KEY,{version:1,looks:getSavedLooks().filter(x=>x.id!==id)});}
+export function exportLooks(){return JSON.stringify({version:1,looks:getSavedLooks()},null,2);}
+export function importLooks(text){let d;try{d=JSON.parse(text);}catch{throw new Error('File JSON không đọc được.');}if(d?.version!==1 || !Array.isArray(d.looks) || d.looks.length>100)throw new Error('File phải là lookbook phiên bản 1, tối đa 100 bản phối.');const incoming=d.looks.map(normalizeLook);const merged=new Map(getSavedLooks().map(x=>[x.id,x]));incoming.forEach(x=>merged.set(x.id,x));if(merged.size>100)throw new Error('Sau nhập sẽ vượt 100 bản phối.');write(STORAGE_KEY,{version:1,looks:[...merged.values()]});return incoming.length;}
+export function loadDraft(fallback){const d=read(DRAFT_KEY);return validateLook(d)?normalizeLook(d):{...fallback,accessoryIds:[...fallback.accessoryIds]};}
+export function saveDraft(x){write(DRAFT_KEY,normalizeLook(x));}
+export function compareLooks(a,b){if(!a||!b)return null;const keys=['garmentId','occasionId','color','fabricId','patternId','hemLength','bottomColor','accessoryIds','backgroundId'];return {lookA:a,lookB:b,diff:Object.fromEntries(keys.filter(k=>JSON.stringify(a[k])!==JSON.stringify(b[k])).map(k=>[k,{A:a[k],B:b[k]}]))};}

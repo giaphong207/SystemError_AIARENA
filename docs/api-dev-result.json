@@ -1,0 +1,10 @@
+{
+  "ok": true,
+  "checks": [
+    "API health reports missing Gemini configuration",
+    "API method, content type, JSON, input, configuration, origin and size errors",
+    "Production SPA deep routes and missing asset handling",
+    "All 18 fonts and valid GLB served successfully",
+    "npm run dev starts Vite and proxies API"
+  ]
+}
