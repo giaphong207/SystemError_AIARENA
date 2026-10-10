@@ -23,7 +23,6 @@ def posed(v):
   z=z*(1-.70*w)
  return [x*.1,(y+8.17)*.1+.02,z*.1]
 v=[posed(a) for a in verts]
-keep=[f for f in faces if all(v[i][1]>1.405 or (abs(v[i][0])>.26 and .72<v[i][1]<1.01) for i in f)]
 used=sorted(set(i for f in keep for i in f));ids={i:j for j,i in enumerate(used)}
 p=[v[i] for i in used];tri=[[ids[i] for i in f] for f in keep];norm=[[0.,0.,0.] for _ in p]
 for a,b,c in tri:
